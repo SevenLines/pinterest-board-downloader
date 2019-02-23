@@ -6,6 +6,8 @@ import sys
 import lxml.html as html
 import requests
 
+__version__ = '0.0.1'
+
 
 # Print iterations progress
 def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='#'):
