@@ -85,26 +85,43 @@ def fetch_boards(boards, force_update=False):
     s = get_session()
 
     for board_index, board in enumerate(boards):
-        r = s.get("https://www.pinterest.com/resource/ReactBoardFeedResource/get/", params={
-            "source_url": board['url'],
-            "data": json.dumps({
-                "options": {
-                    "board_id": board['id'],
-                },
-                "context": {}
-            }),
-        })
-
-        data = r.json()
-
         save_dir = os.path.join("images", board['owner']['username'], board['name'])
+
+        bookmark = None
+
+        images = []
+
+        while bookmark != '-end-':
+            options = {
+                "board_id": board['id'],
+                "page_size": 25,
+            }
+
+            if bookmark:
+                options.update({
+                    "bookmarks": [bookmark],
+                })
+
+            r = s.get("https://www.pinterest.com/resource/BoardFeedResource/get/", params={
+                "source_url": board['url'],
+                "data": json.dumps({
+                    "options": options,
+                    "context": {}
+                }),
+            })
+
+            data = r.json()
+
+            images += data["resource_response"]["data"]
+
+            bookmark = data['resource']['options']['bookmarks'][0]
+
 
         try:
             os.makedirs(save_dir)
         except Exception:
             pass
 
-        images = data["resource_response"]["data"]["board_feed"]
         print("[{}/{}] board: {}, found {} images".format(board_index + 1, len(boards), board['url'], len(images)))
 
         for index, image in enumerate(images):
