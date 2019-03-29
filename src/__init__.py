@@ -6,8 +6,6 @@ import sys
 import lxml.html as html
 import requests
 
-__version__ = '0.0.1'
-
 
 # Print iterations progress
 def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='#'):
@@ -147,7 +145,7 @@ def fetch_boards(boards, force_update=False):
         print()
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Download pin boards by username')
     parser.add_argument('path', type=str, help='pinterest username or username/boardname')
     parser.add_argument('-f', '--force', type=bool, default=False, help='force redownload even if image already exists')
@@ -159,3 +157,7 @@ if __name__ == '__main__':
         boards = get_user_boards(args.path)
 
     fetch_boards(boards, args.force)
+
+
+if __name__ == '__main__':
+    main()
