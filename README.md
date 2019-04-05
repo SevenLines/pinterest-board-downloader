@@ -3,6 +3,12 @@ Pinterest boards downloader
 
 Simple script that downloads board images in current dir
 
+Install
+-------
+```
+pip install git+https://github.com/SevenLines/pinterest-board-downloader.git
+```
+
 Usage
 ---
 
