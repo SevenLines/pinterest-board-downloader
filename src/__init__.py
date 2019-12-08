@@ -49,14 +49,10 @@ def get_user_boards(username):
     root = html.fromstring(r.content)
     tag = root.xpath("//script[@id='initial-state']")[0]
     initial_data = json.loads(tag.text)
-
-    boards = initial_data['resources'] \
-        ['data'] \
-        ['UnauthReactUserProfileResource']
-
-    boards = boards[list(boards.keys())[0]] \
-        ['data'] \
-        ['boards']
+    # UserProfileBoardResource
+    boards = [i for i in initial_data['resourceResponses'] if i['name'] == 'UserProfileBoardResource']
+    if boards:
+        boards = boards[0]['response']['data']
 
     return boards
 
