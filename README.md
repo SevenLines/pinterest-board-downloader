@@ -15,18 +15,18 @@ Usage
 To download all user boards, run
 
 ```
-pinterest.py username
+pinterest username
 ```
 
 to download specific board run
 
 ```
-pinterest.py username/boardname
+pinterest username/boardname
 ```
 
 by default it dont redownload already fetched images, but you can force overwrite by passing -f flag
 
  ```
-pinterest.py username/boardname -f
+pinterest username/boardname -f
 ```
 
