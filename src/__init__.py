@@ -201,8 +201,7 @@ def fetch_boards(boards, force_update=False, path=None):
         # Images in board.
         save_dir = os.path.join(
             "images",
-            board['owner']['username'],
-            board['name']
+            os.path.join(*board["url"][1:-1].split("/")),
         )
         images_by_directory[save_dir] = fetch_images(
             "https://www.pinterest.com/resource/BoardFeedResource/get/",
@@ -216,12 +215,10 @@ def fetch_boards(boards, force_update=False, path=None):
             # Images in board sections.
             save_dir = os.path.join(
                 "images",
-                board['owner']['username'],
-                board['name'],
+                os.path.join(*board['url'][1:-1].split("/")),
                 section
             )
-            directory = "/".join((board["url"][1:-1], section))
-            images_by_directory[directory] = fetch_images(
+            images_by_directory[save_dir] = fetch_images(
                 "https://www.pinterest.com/resource/BoardSectionPinsResource/get",
                 board["url"],
                 {"section_id": section_id, "page_size": 25},
@@ -260,7 +257,7 @@ def fetch_boards(boards, force_update=False, path=None):
                             for chunk in response:
                                 img.write(chunk)
                 else:
-                    print("no image found: {}".format(image_id))
+                    print("\nno image found: {}".format(image_id))
                     continue
 
                 print_progress_bar(
