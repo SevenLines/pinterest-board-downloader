@@ -141,11 +141,28 @@ def fetch_boards(boards, force_update=False):
         print()
 
 
+def get_parser():
+    """argparse.ArgumentParser: Get argument parser."""
+    parser = argparse.ArgumentParser(
+        description='Download pin boards by username'
+    )
+    parser.add_argument(
+        'path',
+        type=str,
+        help='pinterest username or username/boardname'
+    )
+    parser.add_argument(
+        '-f',
+        '--force',
+        action="store_true",
+        help='force redownload even if image already exists'
+    )
+    return parser
+
+
 def main():
-    parser = argparse.ArgumentParser(description='Download pin boards by username')
-    parser.add_argument('path', type=str, help='pinterest username or username/boardname')
-    parser.add_argument('-f', '--force', type=bool, default=False, help='force redownload even if image already exists')
-    args = parser.parse_args()
+    """Main entry point."""
+    args = get_parser().parse_args()
 
     if '/' in args.path:
         boards = get_board_info(args.path)
