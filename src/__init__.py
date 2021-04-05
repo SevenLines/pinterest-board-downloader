@@ -1,3 +1,7 @@
+"""pinterest-board-downloader
+
+Download pinterest boards.
+"""
 import argparse
 import json
 import os
@@ -7,18 +11,22 @@ import lxml.html as html
 import requests
 
 
-# Print iterations progress
-def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='#'):
-    """
+def print_progress_bar(
+        iteration, total, prefix='', suffix='', decimals=1, length=100,
+        fill='#'):
+    """Print iterations progress.
+
     Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
+
+    Args:
+        iteration (int): current iteration
+        total (int): total iterations
+        prefix (str): prefix string (optional)
+        suffix (str): suffix string (optional)
+        decimals (int): positive number of decimals in percent complete (optional)
+        length (int): character length of bar
+        fill (str): bar fill character (optional)
+
     """
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
@@ -28,6 +36,7 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
 
 
 def get_session():
+    """requests.Session: Get requests session."""
     s = requests.Session()
     s.headers = {
         "Host": "www.pinterest.com",
@@ -44,6 +53,15 @@ def get_session():
 
 
 def get_user_boards(username):
+    """Get info for all boards of a user
+
+    Call in a loop to create terminal progress bar
+    @params:
+        username    - Required  : user to query
+
+    Returns:
+        list(dict): data response for multiple boards.
+    """
     session = get_session()
     request = session.get(
         "https://www.pinterest.com/{}/".format(username)
@@ -105,10 +123,27 @@ def get_board_info(board_name):
 
 
 def fetch_boards(boards, force_update=False, path=None):
+    """Download board image data.
+
+    Fetches all images, downloads and writes to disk.
+    Progress is logged to terminal.
+
+    Args:
+        boards (list(dict)): board image data.
+        force_update (bool): re-download existing.
+        path (str): path in the form "user/board/section".
+    """
 
     session = get_session()
 
     def fetch_images(get_url, board_url, options):
+        """Run through get requests, iterating with bookmark hash.
+
+        Args:
+            get_url (str): Get request url.
+            board_url (str): board url to request.
+            options (dict): data to include in request.
+        """
         bookmark = None
         images = []
         while bookmark != '-end-':
@@ -198,7 +233,7 @@ def fetch_boards(boards, force_update=False, path=None):
                     print("no image found: {}".format(image_id))
                     continue
 
-                printProgressBar(
+                print_progress_bar(
                     i, len(images),
                     prefix='Progress:',
                     suffix='Complete',
