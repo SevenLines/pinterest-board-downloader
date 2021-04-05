@@ -28,36 +28,49 @@ def print_progress_bar(
         fill (str): bar fill character (optional)
 
     """
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    sys.stdout.write('\r{} |{}| {}%% {}'.format(prefix, bar, percent, suffix))
+    percent = ("{0:." + str(decimals) + "f}").format(
+        100 * (iteration / float(total))
+    )
+    filled_length = int(length * iteration // total)
+    progress_bar = fill * filled_length + '-' * (length - filled_length)
+    sys.stdout.write(
+        '\r{} |{}| {}%% {}'.format(
+            prefix,
+            progress_bar,
+            percent,
+            suffix
+      )
+    )
     sys.stdout.flush()
 
 
 def get_session():
     """requests.Session: Get requests session."""
-    s = requests.Session()
-    s.headers = {
+    session = requests.Session()
+    session.headers = {
         "Host": "www.pinterest.com",
         "Referer": "https://www.pinterest.com/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.113 Safari/537.36 Vivaldi/2.1.1337.51",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/70.0.3538.113 "
+            "Safari/537.36 "
+            "Vivaldi/2.1.1337.51"
+        ),
         "X-APP-VERSION": "ab1af2a",
         "X-B3-SpanId": "183fc9cb02974b",
         "X-B3-TraceId": "14f603d2caa27c",
         "X-Pinterest-AppState": "active",
         "X-Requested-With": "XMLHttpRequest",
     }
-
-    return s
+    return session
 
 
 def get_user_boards(username):
-    """Get info for all boards of a user
+    """Get info for all boards of a user.
 
-    Call in a loop to create terminal progress bar
-    @params:
-        username    - Required  : user to query
+    Args:
+        username (str): user to query for.
 
     Returns:
         list(dict): data response for multiple boards.
@@ -81,13 +94,31 @@ def get_user_boards(username):
 
 
 def get_user_board_paths(username):
+    """Get all board paths for a user.
+
+    Args:
+        username (str): user to query for.
+
+    Returns:
+        list(str): board paths for user.
+    """
     all_boards = get_user_boards(username)
     return [
         board["url"][1:-1]
         for board in all_boards
     ]
 
+
 def get_board_info(board_name):
+    """Get board info.
+
+    Args:
+        board_name (str): board name to query.
+
+    Returns:
+        dict: data response containing board info.
+        ``"sections"`` added to prevent additional requests.
+    """
     session = get_session()
     response = session.get(
         "https://www.pinterest.com/{}/".format(board_name)
@@ -109,17 +140,47 @@ def get_board_info(board_name):
                 )
             ]
             board["sections"] = sections
-        except (IndexError, KeyError) as e:
+        except (IndexError, KeyError) as _:
             # Board has no sections!
             pass
     elif "resources" in initial_data:
         board = (
-                initial_data
-                .get('resources')
-                .get('data')
-                .get('BoardPageResource')
-        )[list(boards.keys())[0]]['data']
+            initial_data
+            .get('resources')
+            .get('data')
+            .get('BoardPageResource')
+        )
+        board = board[list(board.keys())[0]]['data']
     return board
+
+
+def fetch_images(get_url, board_url, options):
+    """Run through get requests, iterating with bookmark hash.
+
+    Args:
+        get_url (str): Get request url.
+        board_url (str): board url to request.
+        options (dict): data to include in request.
+    """
+    session = get_session()
+    bookmark = None
+    images = []
+    while bookmark != '-end-':
+        if bookmark:
+            options.update({ "bookmarks": [bookmark], })
+        response = session.get(
+            get_url,
+            params={
+                "source_url": board_url,
+                "data": json.dumps(
+                    {"options": options, "context": {}}
+                ),
+            }
+        )
+        data = response.json()
+        images += data["resource_response"]["data"]
+        bookmark = data['resource']['options']['bookmarks'][0]
+    return images
 
 
 def fetch_boards(boards, force_update=False, path=None):
@@ -133,40 +194,10 @@ def fetch_boards(boards, force_update=False, path=None):
         force_update (bool): re-download existing.
         path (str): path in the form "user/board/section".
     """
-
-    session = get_session()
-
-    def fetch_images(get_url, board_url, options):
-        """Run through get requests, iterating with bookmark hash.
-
-        Args:
-            get_url (str): Get request url.
-            board_url (str): board url to request.
-            options (dict): data to include in request.
-        """
-        bookmark = None
-        images = []
-        while bookmark != '-end-':
-            if bookmark:
-                options.update({ "bookmarks": [bookmark], })
-            response = session.get(
-                get_url,
-                params={
-                    "source_url": board_url,
-                    "data": json.dumps(
-                        {"options": options, "context": {}}
-                    ),
-                }
-            )
-            data = response.json()
-            images += data["resource_response"]["data"]
-            bookmark = data['resource']['options']['bookmarks'][0]
-        return images
-
     images_by_directory = {}
-    filter_user, filter_board, filter_section = (path.split("/") + [None, None, None])[:3]
+    _, _, filter_section = (path.split("/") + [None, None, None])[:3]
 
-    for board_index, board in enumerate(boards):
+    for board in boards:
         # Images in board.
         save_dir = os.path.join(
             "images",
@@ -200,7 +231,7 @@ def fetch_boards(boards, force_update=False, path=None):
             pinterest_path = "/".join(save_dir.split(os.path.sep)[1:])
             try:
                 os.makedirs(save_dir)
-            except Exception:
+            except OSError as _:
                 pass
             print(
                 "[{}/{}] board: {}, found {} images".format(
@@ -223,12 +254,11 @@ def fetch_boards(boards, force_update=False, path=None):
                         save_dir, "{}.{}".format(str(image_id), ext))
 
                     if not os.path.exists(file_path) or force_update:
-                        print(url)
-                        r = requests.get(url, stream=True)
+                        response = requests.get(url, stream=True)
 
-                        with open(file_path, 'wb') as f:
-                            for chunk in r:
-                                f.write(chunk)
+                        with open(file_path, 'wb') as img:
+                            for chunk in response:
+                                img.write(chunk)
                 else:
                     print("no image found: {}".format(image_id))
                     continue
