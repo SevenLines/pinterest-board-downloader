@@ -11,7 +11,7 @@ setup(
             ['pinterest = src:main']
     },
     install_requires=[
-        "lxml==4.6.3",
+        "lxml==4.9.1",
         "requests==2.21",
     ]
 )
